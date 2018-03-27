@@ -21,4 +21,4 @@ def showip():
     print('network config:', sta_if.ifconfig())
 
 
-connect()
+#connect()

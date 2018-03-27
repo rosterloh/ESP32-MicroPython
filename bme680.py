@@ -67,7 +67,7 @@ class BME680:
         """Check the BME680 was found, read the coefficients and enable the sensor for continuous
            reads."""
         self._write(_BME680_REG_SOFTRESET, [0xB6])
-        time.sleep(0.005)
+        time.sleep_ms(5)
 
         # Check device ID.
         chip_id = self._read_byte(_BME680_REG_CHIPID)
@@ -95,7 +95,7 @@ class BME680:
         self._t_fine = None
 
         self._last_reading = 0
-        self._min_refresh_time = 1 / refresh_rate
+        self._min_refresh_time = (1 / refresh_rate) * 1000  # in ms
 
     @property
     def pressure_oversample(self):
@@ -204,7 +204,7 @@ class BME680:
     def altitude(self):
         """The altitude based on current ``pressure`` vs the sea level pressure
            (``sea_level_pressure``) - which you must enter ahead of time)"""
-        pressure = self.pressure # in Si units for hPascal
+        pressure = self.pressure  # in Si units for hPascal
         return 44330 * (1.0 - math.pow(pressure / self.sea_level_pressure, 0.1903))
 
     @property
@@ -220,7 +220,7 @@ class BME680:
     def _perform_reading(self):
         """Perform a single-shot reading from the sensor and fill internal data structure for
            calculations"""
-        if time.monotonic() - self._last_reading < self._min_refresh_time:
+        if time.ticks_diff(time.ticks_ms(), self._last_reading) < self._min_refresh_time:
             return
 
         # set filter
@@ -240,8 +240,8 @@ class BME680:
         while not new_data:
             data = self._read(_BME680_REG_STATUS, 15)
             new_data = data[0] & 0x80 != 0
-            time.sleep(0.005)
-        self._last_reading = time.monotonic()
+            time.sleep_ms(5)
+        self._last_reading = time.ticks_ms()
 
         self._adc_pres = _read24(data[2:5]) / 16
         self._adc_temp = _read24(data[5:8]) / 16

@@ -1,23 +1,20 @@
 import machine
 import time
 from bme680 import BME680
+from io_pubsub import IOClient
 
 adc = machine.ADC(machine.Pin(35))
 adc.atten(machine.ADC.ATTN_11DB)  # provides full range of 0-4095
 
 led = machine.Pin(22, machine.Pin.OUT)  # LED on the board
+led.value(0)
 bme680 = BME680()
+io = IOClient()
 
 while True:
-    #if adc.read() > 2048:
-    #    led.value(1)
-    #else:
-    #    led.value(0)
-    #time.sleep_ms(20)
-    print("\nTemperature: %0.1f C" % bme680.temperature)
-    print("Gas: %d ohm" % bme680.gas)
-    print("Humidity: %0.1f %%" % bme680.humidity)
-    print("Pressure: %0.3f hPa" % bme680.pressure)
-    print("Altitude = %0.2f meters" % bme680.altitude)
+    battery = (adc.read() * 2 * 3.3) / 4096
+    print("Battery: %d mV", battery)
 
-    time.sleep(2)
+    io.update(bme680.temperature, bme680.humidity, bme680.pressure, bme680.gas, battery)
+    io.publish()
+    time.sleep(60)
